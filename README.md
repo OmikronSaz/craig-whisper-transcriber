@@ -33,25 +33,32 @@ La primera vez que se utilice el modelo de Whisper puede ser necesario descargar
 Configuración recomendada:
 
 - Windows 11
-- Python 3.13
+- Python 3.14 o Python 3.13
 - GPU NVIDIA compatible con CUDA
 - Espacio disponible para el modelo, los archivos de audio y las transcripciones
 
-El proyecto utiliza versiones específicas de sus dependencias para mantener un entorno reproducible.
+El proyecto utiliza versiones específicas de sus dependencias para mantener un entorno estable y reproducible.
 
 ## Instalación
 
-### 1. Instalar Python 3.13
+### 1. Instalar Python
 
-Descarga Python 3.13 desde:
+Este proyecto es compatible actualmente con:
+
+- Python 3.14, recomendado
+- Python 3.13
+
+Descarga Python desde:
 
 https://www.python.org/
 
 Durante la instalación asegúrate de instalar también Python Launcher.
 
-Puedes comprobar la instalación abriendo una terminal y ejecutando:
+Puedes comprobar las versiones instaladas abriendo una terminal y ejecutando:
 
-py -3.13 --version
+    py -0p
+
+El archivo `setup.bat` seleccionará automáticamente Python 3.14 si está disponible. Si no está instalado, utilizará Python 3.13.
 
 ### 2. Descargar este proyecto
 
@@ -63,15 +70,17 @@ No es necesario instalar el proyecto dentro de una ruta específica.
 
 Haz doble clic en:
 
-setup.bat
+    setup.bat
 
 Este proceso:
 
-- verifica que Python 3.13 esté disponible;
+- detecta automáticamente Python 3.14 o Python 3.13;
 - crea un entorno virtual local llamado `.venv`;
 - instala Faster-Whisper;
 - instala las versiones necesarias de CTranslate2 y PyAV;
-- verifica que las dependencias puedan importarse correctamente.
+- instala las librerías NVIDIA necesarias;
+- verifica que las dependencias puedan importarse correctamente;
+- verifica la GPU NVIDIA, CUDA y soporte para `float16`.
 
 Normalmente solo necesitas ejecutar `setup.bat` una vez.
 
@@ -79,18 +88,18 @@ Normalmente solo necesitas ejecutar `setup.bat` una vez.
 
 Dentro de:
 
-input\player_names.txt
+    input\player_names.txt
 
 puedes indicar qué nombre quieres mostrar en la transcripción.
 
 Formato:
 
-usuario_de_discord: Nombre del personaje
+    usuario_de_discord: Nombre del personaje
 
 Ejemplo:
 
-usuario121: Nombre del personaje
-usuario122: Segundo personaje
+    usuario121: Nombre del personaje
+    usuario122: Segundo personaje
 
 Puedes agregar tantos jugadores como necesites.
 
@@ -100,7 +109,7 @@ Si un usuario no aparece en `player_names.txt`, se utilizará automáticamente s
 
 Si tampoco es posible determinar el nombre de Discord, se utilizará un identificador único como:
 
-Jugador 03
+    Jugador 03
 
 ## Procesar una sesión
 
@@ -112,14 +121,14 @@ Descarga la versión multitrack de la sesión desde Craig.
 
 Extrae el contenido del ZIP de Craig directamente dentro de:
 
-input
+    input
 
 Normalmente encontrarás archivos similares a:
 
-01_usuario1_0.flac
-02_usuario2_0.flac
-03_usuario3_0.flac
-info.txt
+    01_usuario1_0.flac
+    02_usuario2_0.flac
+    03_usuario3_0.flac
+    info.txt
 
 No es necesario renombrar los archivos.
 
@@ -131,7 +140,7 @@ Cuando `info.txt` está disponible, el programa lo utiliza para identificar qué
 
 Haz doble clic en:
 
-run_transcription.bat
+    run_transcription.bat
 
 El programa mostrará el progreso mientras procesa las pistas.
 
@@ -147,36 +156,36 @@ No cierres la ventana mientras el proceso esté trabajando.
 
 Al terminar correctamente, encontrarás la transcripción combinada dentro de:
 
-output
+    output
 
 El nombre incluye la fecha y hora de la sesión para evitar sobrescribir transcripciones anteriores.
 
 Ejemplo:
 
-combined_transcript_2026-10-04_200020.txt
+    combined_transcript_2026-10-04_200020.txt
 
 La transcripción comienza con información básica de la sesión:
 
-============================================================
-INFORMACIÓN DE LA SESIÓN
-============================================================
-Fecha: 2026-10-04 20:00:20
-Campaña: Ejemplo de campaña
-Duración: 03:16:43
-Participantes: 8
+    ============================================================
+    INFORMACIÓN DE LA SESIÓN
+    ============================================================
+    Fecha: 2026-10-04 20:00:20
+    Campaña: Ejemplo de campaña
+    Duración: 03:16:43
+    Participantes: 8
 
-Personajes:
-  usuario1: Personaje Uno
-  usuario2: Personaje Dos
+    Personajes:
+      usuario1: Personaje Uno
+      usuario2: Personaje Dos
 
-============================================================
-TRANSCRIPCIÓN
-============================================================
+    ============================================================
+    TRANSCRIPCIÓN
+    ============================================================
 
 Después aparecen las intervenciones combinadas cronológicamente:
 
-[00:00:14.70 -> 00:00:32.38] Personaje Uno: ...
-[00:00:32.40 -> 00:00:33.86] Personaje Dos: ...
+    [00:00:14.70 -> 00:00:32.38] Personaje Uno: ...
+    [00:00:32.40 -> 00:00:33.86] Personaje Dos: ...
 
 Las conversaciones simultáneas se conservan según sus timestamps originales.
 
@@ -194,17 +203,17 @@ Esto permite que la transcripción continúe incluso si `player_names.txt` está
 
 Después de una ejecución exitosa, los archivos utilizados se mueven automáticamente a una carpeta única dentro de:
 
-archive
+    archive
 
 Ejemplo:
 
-archive\
-    2026-10-04_200020\
-        01_usuario1_0.flac
-        01_usuario1_0.txt
-        02_usuario2_0.flac
-        02_usuario2_0.txt
-        info.txt
+    archive\
+        2026-10-04_200020\
+            01_usuario1_0.flac
+            01_usuario1_0.txt
+            02_usuario2_0.flac
+            02_usuario2_0.txt
+            info.txt
 
 Las transcripciones individuales generadas durante el proceso también se conservan dentro del archivo de la sesión.
 
@@ -222,20 +231,20 @@ La ventana de `run_transcription.bat` permanece abierta para mostrar el mensaje 
 
 ## Estructura del proyecto
 
-Whisper\
-│
-├── input\
-│   └── player_names.txt
-│
-├── output\
-│
-├── archive\
-│
-├── scripts\
-│   └── transcribe_session.py
-│
-├── setup.bat
-└── run_transcription.bat
+    Whisper\
+    │
+    ├── input\
+    │   └── player_names.txt
+    │
+    ├── output\
+    │
+    ├── archive\
+    │
+    ├── scripts\
+    │   └── transcribe_session.py
+    │
+    ├── setup.bat
+    └── run_transcription.bat
 
 El entorno `.venv` se crea localmente al ejecutar `setup.bat`.
 
@@ -247,9 +256,9 @@ No necesitas confiar ciegamente en un archivo ejecutable desconocido.
 
 Los principales archivos de este proyecto son archivos de texto que pueden inspeccionarse antes de ejecutarlos:
 
-setup.bat
-run_transcription.bat
-scripts\transcribe_session.py
+    setup.bat
+    run_transcription.bat
+    scripts\transcribe_session.py
 
 En Windows puedes hacer clic derecho sobre un archivo `.bat` y seleccionar Editar para revisar sus comandos.
 
@@ -261,11 +270,11 @@ El proyecto no necesita enviar las grabaciones a un servicio externo para realiz
 
 El entorno de Python utiliza versiones específicas para mantener resultados reproducibles:
 
-Python:          3.13.x
-faster-whisper:  1.2.1
-CTranslate2:     4.8.2
-PyAV:            18.0.0
-Modelo Whisper:  large-v3
+    Python: 3.14.x o 3.13.x
+    faster-whisper: 1.2.1
+    CTranslate2: 4.8.2
+    PyAV: 18.0.0
+    Modelo Whisper: large-v3
 
 PyAV 18.0.0 se fija intencionalmente debido a una incompatibilidad entre PyAV 19 y la versión de Faster-Whisper utilizada por este proyecto.
 
@@ -316,6 +325,7 @@ Descargar ZIP multitrack de Craig
 → Abrir la transcripción combinada dentro de `output`
 
 → Los archivos de la sesión quedan organizados automáticamente dentro de `archive`
+
 ## Librerías NVIDIA CUDA
 
 El flujo local con GPU NVIDIA utiliza Faster-Whisper mediante CTranslate2.
@@ -342,4 +352,3 @@ Si `setup.bat` termina correctamente, verifica:
 - carga de las DLL necesarias de NVIDIA.
 
 Si estas verificaciones fallan, comprueba que los drivers de NVIDIA estén actualizados. Si no tienes una GPU NVIDIA compatible, utiliza el flujo de Kaggle del tutorial.
-

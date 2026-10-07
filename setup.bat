@@ -13,7 +13,6 @@ echo Este proceso preparara el entorno necesario para transcribir.
 echo Solo necesitas ejecutarlo una vez.
 echo.
 
-
 REM ------------------------------------------------------------
 REM Check Python launcher
 REM ------------------------------------------------------------
@@ -23,25 +22,44 @@ where py >nul 2>&1
 if errorlevel 1 (
     echo ERROR: No se encontro Python Launcher.
     echo.
-    echo Instala Python 3.13 desde python.org
-    echo y asegurate de instalar tambien Python Launcher.
+    echo Instala Python desde:
+    echo https://www.python.org/downloads/windows/
+    echo.
+    echo Asegurate de instalar tambien Python Launcher.
     echo.
     pause
     exit /b 1
 )
 
-
 REM ------------------------------------------------------------
-REM Check Python 3.13
+REM Select supported Python version
+REM Prefer 3.14, fall back to 3.13
 REM ------------------------------------------------------------
 
-py -3.13 --version >nul 2>&1
+set "PY_VERSION="
 
-if errorlevel 1 (
-    echo ERROR: No se encontro Python 3.13.
+py -3.14 --version >nul 2>&1
+if not errorlevel 1 (
+    set "PY_VERSION=3.14"
+)
+
+if not defined PY_VERSION (
+    py -3.13 --version >nul 2>&1
+    if not errorlevel 1 (
+        set "PY_VERSION=3.13"
+    )
+)
+
+if not defined PY_VERSION (
+    echo ERROR: No se encontro una version compatible de Python.
     echo.
-    echo Este proyecto requiere Python 3.13.
-    echo Instala Python 3.13 desde python.org y vuelve a ejecutar setup.bat.
+    echo Versiones compatibles actualmente:
+    echo.
+    echo     Python 3.14
+    echo     Python 3.13
+    echo.
+    echo Instala una version compatible desde:
+    echo https://www.python.org/downloads/windows/
     echo.
     echo Versiones de Python detectadas:
     py -0p
@@ -50,23 +68,22 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Python detectado:
-py -3.13 --version
+echo Python seleccionado:
+py -%PY_VERSION% --version
 echo.
 
-
 REM ------------------------------------------------------------
-REM Create virtual environment
+REM Create or validate virtual environment
 REM ------------------------------------------------------------
 
 set "VENV=%~dp0.venv"
 set "PYTHON=%VENV%\Scripts\python.exe"
 
 if not exist "%PYTHON%" (
-    echo Creando entorno virtual...
+    echo Creando entorno virtual con Python %PY_VERSION%...
     echo.
 
-    py -3.13 -m venv "%VENV%"
+    py -%PY_VERSION% -m venv "%VENV%"
 
     if errorlevel 1 (
         echo.
@@ -78,8 +95,36 @@ if not exist "%PYTHON%" (
 ) else (
     echo El entorno virtual ya existe.
     echo.
+
+    for /f "tokens=2" %%V in ('"%PYTHON%" --version 2^>^&1') do set "VENV_VERSION=%%V"
+
+    echo Python del entorno existente: %VENV_VERSION%
+    echo.
+
+    echo %VENV_VERSION% | findstr /b "3.14." >nul
+    if not errorlevel 1 goto VENV_OK
+
+    echo %VENV_VERSION% | findstr /b "3.13." >nul
+    if not errorlevel 1 goto VENV_OK
+
+    echo ERROR: El entorno virtual existente usa una version
+    echo de Python que no esta soportada actualmente.
+    echo.
+    echo Version detectada:
+    echo     %VENV_VERSION%
+    echo.
+    echo Versiones compatibles:
+    echo     Python 3.14
+    echo     Python 3.13
+    echo.
+    echo Elimina la carpeta .venv y vuelve a ejecutar setup.bat
+    echo para crear un entorno nuevo.
+    echo.
+    pause
+    exit /b 1
 )
 
+:VENV_OK
 
 REM ------------------------------------------------------------
 REM Upgrade pip
@@ -97,7 +142,6 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-
 
 REM ------------------------------------------------------------
 REM Check Faster-Whisper dependencies
@@ -129,14 +173,12 @@ if errorlevel 1 (
     echo Dependencias de Whisper ya instaladas.
 )
 
-
 REM ------------------------------------------------------------
 REM NVIDIA library paths
 REM ------------------------------------------------------------
 
 set "CUBLAS_BIN=%VENV%\Lib\site-packages\nvidia\cublas\bin"
 set "CUDNN_BIN=%VENV%\Lib\site-packages\nvidia\cudnn\bin"
-
 
 REM ------------------------------------------------------------
 REM Install NVIDIA CUDA libraries only if needed
@@ -172,11 +214,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-
 :NVIDIA_READY
 
 set "PATH=%CUBLAS_BIN%;%CUDNN_BIN%;%PATH%"
-
 
 REM ------------------------------------------------------------
 REM Verify Python packages
@@ -186,7 +226,7 @@ echo.
 echo Verificando instalacion...
 echo.
 
-"%PYTHON%" -c "from importlib.metadata import version; import faster_whisper, ctranslate2, av; print('faster-whisper:', version('faster-whisper')); print('CTranslate2:', version('ctranslate2')); print('PyAV:', version('av')); print('cuBLAS:', version('nvidia-cublas-cu12')); print('cuDNN:', version('nvidia-cudnn-cu12'))"
+"%PYTHON%" -c "from importlib.metadata import version; import faster_whisper, ctranslate2, av; print('Python:', __import__('sys').version.split()[0]); print('faster-whisper:', version('faster-whisper')); print('CTranslate2:', version('ctranslate2')); print('PyAV:', version('av')); print('cuBLAS:', version('nvidia-cublas-cu12')); print('cuDNN:', version('nvidia-cudnn-cu12'))"
 
 if errorlevel 1 (
     echo.
@@ -195,7 +235,6 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-
 
 REM ------------------------------------------------------------
 REM Verify NVIDIA runtime files
@@ -228,7 +267,6 @@ if not exist "%CUDNN_BIN%\cudnn64_9.dll" (
 echo cuBLAS encontrado.
 echo cuDNN encontrado.
 
-
 REM ------------------------------------------------------------
 REM Verify NVIDIA GPU and actual DLL loading
 REM ------------------------------------------------------------
@@ -260,7 +298,6 @@ if errorlevel 1 (
 echo.
 echo GPU NVIDIA, CUDA, cuBLAS y cuDNN detectados correctamente.
 
-
 REM ------------------------------------------------------------
 REM Complete
 REM ------------------------------------------------------------
@@ -271,6 +308,9 @@ echo CONFIGURACION COMPLETADA
 echo ============================================================
 echo.
 echo El entorno esta listo.
+echo.
+echo Version de Python utilizada:
+"%PYTHON%" --version
 echo.
 echo A partir de ahora usa:
 echo.
