@@ -1,0 +1,6 @@
+# (NOTA) Formato: usuario de Discord: nombre que aparecerá en la transcripción
+
+usuario121: Nombre del personaje
+usuario122: Segundo personaje 
+
+

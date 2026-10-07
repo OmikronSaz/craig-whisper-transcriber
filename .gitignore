@@ -1,0 +1,29 @@
+# Local Python environment
+.venv/
+
+# Development/testing files
+dev_backup/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Session input files
+input/*
+!input/player_names.txt
+
+# Generated transcripts
+output/*
+!output/.gitkeep
+
+# Archived recordings and transcripts
+archive/*
+!archive/.gitkeep
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# VS Code local settings
+.vscode/
