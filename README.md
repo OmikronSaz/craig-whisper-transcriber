@@ -316,3 +316,30 @@ Descargar ZIP multitrack de Craig
 → Abrir la transcripción combinada dentro de `output`
 
 → Los archivos de la sesión quedan organizados automáticamente dentro de `archive`
+## Librerías NVIDIA CUDA
+
+El flujo local con GPU NVIDIA utiliza Faster-Whisper mediante CTranslate2.
+
+Durante una prueba externa en un portátil limpio, la GPU fue detectada correctamente, pero la transcripción falló porque las librerías necesarias de CUDA no estaban disponibles:
+
+`cublas64_12.dll`
+
+A partir de la versión 1.0.1, `setup.bat` instala automáticamente dentro del entorno virtual del proyecto las librerías NVIDIA necesarias:
+
+- `nvidia-cublas-cu12`
+- `nvidia-cudnn-cu12`
+
+`run_transcription.bat` también añade temporalmente las carpetas de estas DLL al `PATH` durante cada ejecución.
+
+No es necesario instalar manualmente el CUDA Toolkit completo para este flujo.
+
+Si `setup.bat` termina correctamente, verifica:
+
+- detección de GPU CUDA;
+- soporte para `float16`;
+- cuBLAS;
+- cuDNN;
+- carga de las DLL necesarias de NVIDIA.
+
+Si estas verificaciones fallan, comprueba que los drivers de NVIDIA estén actualizados. Si no tienes una GPU NVIDIA compatible, utiliza el flujo de Kaggle del tutorial.
+
