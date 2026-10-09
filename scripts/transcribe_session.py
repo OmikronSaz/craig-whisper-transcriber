@@ -77,7 +77,7 @@ def load_player_names(path):
 # ------------------------------------------------------------
 
 TRACK_RE = re.compile(
-    r"^\s*(.*?)\s+\(([^()]+)#\d+\)\s+\((\d+)\)\s*$"
+    r"(?:^|\()([^()\s]+)#\d+\)?\s+\((\d+)\)\s*$"
 )
 
 
@@ -113,10 +113,10 @@ def parse_info_file(path):
             continue
 
         elif in_tracks and stripped:
-            match = TRACK_RE.match(line)
+            match = TRACK_RE.search(line)
 
             if match:
-                username = match.group(2).strip()
+                username = match.group(1).strip()
                 result["usernames"].append(username)
 
     expanded_text = text.replace("\\n", "\n")
@@ -138,64 +138,101 @@ def parse_info_file(path):
 # FLAC discovery
 # ------------------------------------------------------------
 
-CRAIG_FLAC_RE = re.compile(
-    r"^(\d+)_(.+)_0$",
-    re.IGNORECASE
-)
-
-
 def get_track_number(path):
-    first_part = path.stem.split("_", 1)[0]
+    """
+    Try to recover a leading track number from the filename.
 
-    if first_part.isdigit():
-        return first_part
+    Examples:
+        1-dres7234.flac      -> 1
+        02_omikronpi_0.flac -> 02
+        voice.flac           -> None
+
+    A track number is optional. An unrecognized filename must
+    never prevent a FLAC file from being transcribed.
+    """
+
+    match = re.match(r"^(\d+)", path.stem)
+
+    if match:
+        return match.group(1)
 
     return None
 
 
 def find_username_from_info(path, usernames):
     """
-    Match the FLAC filename against usernames found in Craig's info.txt.
+    Try to associate a FLAC filename with a Discord username
+    listed in Craig's info.txt.
 
-    This also lets temporary test files work without hardcoding
-    anything about their names.
+    Filename recognition is only used to improve speaker naming.
+    Failure to identify a username must never reject the FLAC.
     """
 
-    stem = path.stem
+    stem_folded = path.stem.casefold()
 
-    parts = stem.split("_", 1)
-
-    if len(parts) == 2 and parts[0].isdigit():
-        filename_body = parts[1]
-    else:
-        filename_body = stem
-
-    body_folded = filename_body.casefold()
-
-    # Longest first in case one username begins with another.
+    # Longest first in case one username is contained inside another.
     for username in sorted(
         usernames,
         key=len,
         reverse=True
     ):
-        username_folded = username.casefold()
-
-        if body_folded == username_folded:
-            return username
-
-        if body_folded.startswith(
-            username_folded + "_"
-        ):
+        if username.casefold() in stem_folded:
             return username
 
     return None
 
 
+def infer_username_from_filename(path):
+    """
+    Try to recover a useful speaker name directly from the FLAC
+    filename when info.txt cannot identify the Discord username.
+
+    Examples:
+        1-dres7234.flac       -> dres7234
+        2-omikronpi.flac      -> omikronpi
+        01_username_0.flac    -> username
+        recording.flac        -> recording
+    """
+
+    stem = path.stem.strip()
+
+    # Remove a leading Craig track number and separator.
+    candidate = re.sub(
+        r"^\d+[-_\s]*",
+        "",
+        stem
+    )
+
+    # Remove Craig's optional trailing _0.
+    candidate = re.sub(
+        r"_0$",
+        "",
+        candidate,
+        flags=re.IGNORECASE
+    )
+
+    candidate = candidate.strip(" -_")
+
+    if candidate:
+        return candidate
+
+    return stem
+
+
 def find_flac_files(info):
-    all_flacs = sorted(INPUT_DIR.glob("*.flac"))
+    """
+    Accept every FLAC file found inside input.
+
+    Speaker identity is resolved as accurately as possible, but
+    inability to identify a Discord username must never cause a
+    valid FLAC file to be rejected.
+    """
+
+    all_flacs = sorted(
+        INPUT_DIR.glob("*.flac")
+    )
 
     selected = []
-    ignored = []
 
     info_usernames = info["usernames"]
 
@@ -204,27 +241,17 @@ def find_flac_files(info):
 
         username = None
 
-        # Best source: Craig info.txt
+        # First try the usernames Craig supplied in info.txt.
         if info_usernames:
             username = find_username_from_info(
                 path,
                 info_usernames
             )
 
-            if not username:
-                ignored.append(path)
-                continue
-
-        # Fallback if info.txt is absent or contains no usable tracks.
-        else:
-            match = CRAIG_FLAC_RE.match(path.stem)
-
-            if match:
-                track_number = match.group(1)
-                username = match.group(2)
-            else:
-                ignored.append(path)
-                continue
+        # If info.txt could not identify it, derive a useful
+        # speaker name directly from the FLAC filename.
+        if not username:
+            username = infer_username_from_filename(path)
 
         selected.append({
             "path": path,
@@ -232,7 +259,7 @@ def find_flac_files(info):
             "username": username
         })
 
-    return selected, ignored
+    return selected, []
 
 
 # ------------------------------------------------------------
